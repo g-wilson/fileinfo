@@ -1,0 +1,6 @@
+.env
+.DS_Store
+main
+bin
+*.zip
+__debug_bin
