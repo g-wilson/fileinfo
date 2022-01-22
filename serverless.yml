@@ -1,0 +1,49 @@
+service: fileinfo
+
+frameworkVersion: '2'
+variablesResolutionMode: 20210326
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: ${opt:stage,'local'}
+  lambdaHashingVersion: 20201221
+  region: eu-west-1
+  environment:
+    LOG_FORMAT: ${self:custom.LOG_FORMAT.${self:provider.stage}}
+    LOG_LEVEL: ${self:custom.LOG_LEVEL.${self:provider.stage}}
+
+package:
+  patterns:
+    - '!./**'
+    - ./bin/**
+
+functions:
+  readfile:
+    handler: bin/lambda
+    environment:
+      FFPROBE_BIN_PATH: ${self:custom.FFPROBE_BIN_PATH.${self:provider.stage}}
+      EXIFTOOL_BIN_PATH: ${self:custom.EXIFTOOL_BIN_PATH.${self:provider.stage}}
+      MAX_FILE_SIZE: ${self:custom.MAX_FILE_SIZE.${self:provider.stage}}
+    layers:
+      - arn:aws:lambda:eu-west-1:921769004657:layer:exiftool-ffmpeg:3
+
+custom:
+  stages:
+    - local
+    - prod
+  LOG_LEVEL:
+    local: debug
+    prod: info
+  LOG_FORMAT:
+    local: text
+    prod: json
+  FFPROBE_BIN_PATH:
+    local: /usr/local/bin/ffprobe
+    prod: /opt/bin/ffmpeg/ffprobe
+  EXIFTOOL_BIN_PATH:
+    local: /usr/local/bin/exiftool
+    prod: /opt/bin/exiftool/exiftool
+  MAX_FILE_SIZE:
+    local: 11000000
+    prod: 11000000

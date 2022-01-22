@@ -1,4 +1,4 @@
-package app
+package file
 
 import (
 	"context"
@@ -24,11 +24,10 @@ var (
 type File struct {
 	file  *os.File
 	mutex sync.Mutex
-
-	Size int64
+	size  int64
 }
 
-func NewFileFromURL(ctx context.Context, url string, maxSizeBytes int64) (*File, error) {
+func NewFromURL(ctx context.Context, url string, maxSizeBytes int64) (*File, error) {
 	body, err := doRequest(ctx, url)
 	if err != nil {
 		if _, ok := err.(hand.E); !ok {
@@ -55,9 +54,19 @@ func NewFileFromURL(ctx context.Context, url string, maxSizeBytes int64) (*File,
 		return nil, ErrFileTooLarge
 	}
 
-	f.Size = bytesWritten
+	f.size = bytesWritten
 
 	return f, nil
+}
+
+func (f *File) Size() int64 {
+	return f.size
+}
+
+func (f *File) File() *os.File {
+	f.mutex.Lock()
+
+	return f.file
 }
 
 func (f *File) Cleanup() error {
@@ -70,6 +79,8 @@ func (f *File) Cleanup() error {
 	if err != nil {
 		return fmt.Errorf("error removing temp file: %w", err)
 	}
+
+	f.mutex.Unlock()
 
 	return nil
 }
